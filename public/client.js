@@ -86,3 +86,89 @@ socket.on("allWords", (words) => {
     wordsList.appendChild(li);
   });
 });
+
+let currentWordIndex = 0;
+let wordsToGuess = [];
+let playersList = [];
+
+socket.on("playersUpdate", (players) => {
+  playersList = players;
+  playersDiv.innerHTML = "<h3>Joueurs :</h3>" +
+    players.map(p => `<div>${p.name}</div>`).join("");
+});
+
+socket.on("allWords", (words) => {
+  wordsToGuess = words;
+  currentWordIndex = 0;
+  showPhase("guessing");
+  showWordToGuess();
+});
+
+function showWordToGuess() {
+  const wordObj = wordsToGuess[currentWordIndex];
+  wordsList.innerHTML = `<li style="font-size:1.3rem; text-align:center;">${wordObj.word}</li>`;
+  renderPlayerButtons(wordObj);
+}
+
+function renderPlayerButtons(wordObj) {
+  const guessArea = document.getElementById("guessArea");
+  guessArea.innerHTML = "";
+
+  playersList.forEach(player => {
+    const btn = document.createElement("button");
+    btn.textContent = player.name;
+    btn.style.margin = "6px 0";
+    btn.style.width = "100%";
+    btn.style.padding = "12px";
+    btn.style.borderRadius = "12px";
+    btn.style.background = "rgba(255,255,255,0.1)";
+    btn.style.color = "white";
+    btn.style.border = "1px solid rgba(255,255,255,0.2)";
+    btn.style.fontSize = "1rem";
+    btn.style.cursor = "pointer";
+    btn.style.transition = "0.2s";
+
+    btn.onclick = () => checkGuess(player, wordObj);
+
+    guessArea.appendChild(btn);
+  });
+}
+
+function checkGuess(player, wordObj) {
+  const feedback = document.getElementById("feedback");
+
+  if (player.id === wordObj.authorId) {
+    feedback.innerHTML = "🎉 Bonne réponse !";
+    feedback.style.color = "#4ef0ff";
+
+    // Animation de victoire
+    feedback.animate([
+      { transform: "scale(1)" },
+      { transform: "scale(1.3)" },
+      { transform: "scale(1)" }
+    ], { duration: 500 });
+
+    setTimeout(() => {
+      feedback.innerHTML = "";
+      currentWordIndex++;
+
+      if (currentWordIndex < wordsToGuess.length) {
+        showWordToGuess();
+      } else {
+        feedback.innerHTML = "🎊 Tous les mots ont été devinés !";
+      }
+    }, 800);
+
+  } else {
+    feedback.innerHTML = "❌ Mauvais joueur, réessaie !";
+    feedback.style.color = "#ff6b6b";
+
+    // Animation d’erreur
+    feedback.animate([
+      { transform: "translateX(0)" },
+      { transform: "translateX(-10px)" },
+      { transform: "translateX(10px)" },
+      { transform: "translateX(0)" }
+    ], { duration: 300 });
+  }
+}

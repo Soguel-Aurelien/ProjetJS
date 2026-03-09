@@ -10,6 +10,12 @@ app.use(express.static("public"));
 
 const games = new Map(); // gameCode -> { players, words, state }
 
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
+
+
 function createGame(code) {
   games.set(code, {
     players: [], // {id, name}
@@ -83,7 +89,8 @@ io.on("connection", (socket) => {
 
     game.words.push({
       word,
-      authorId: socket.id
+      authorId: socket.id,
+      authorName: player.name
     });
 
     if (game.words.length === game.players.length) {
