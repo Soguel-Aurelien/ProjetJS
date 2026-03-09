@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jeu de soirée</title>
+</head>
+<body>
+  <div id="lobby">
+    <h1>Jeu de soirée</h1>
+    <input id="name" placeholder="Ton prénom" />
+    <input id="code" placeholder="Code de partie" />
+    <button id="create">Créer</button>
+    <button id="join">Rejoindre</button>
+    <div id="players"></div>
+    <button id="start" style="display:none;">Lancer la partie</button>
+  </div>
+
+  <div id="writing" style="display:none;">
+    <h2 id="assignment"></h2>
+    <input id="word" placeholder="Un mot" />
+    <button id="sendWord">Envoyer</button>
+  </div>
+
+  <div id="guessing" style="display:none;">
+    <h2>Mots reçus</h2>
+    <ul id="wordsList"></ul>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
