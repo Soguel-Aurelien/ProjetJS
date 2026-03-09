@@ -19,6 +19,8 @@ const wordInput = document.getElementById("word");
 const sendWordBtn = document.getElementById("sendWord");
 const wordsList = document.getElementById("wordsList");
 
+const nextRoundBtn = document.getElementById("nextRound");
+
 function showPhase(phase) {
   lobbyDiv.style.display = phase === "lobby" ? "block" : "none";
   writingDiv.style.display = phase === "writing" ? "block" : "none";
@@ -108,6 +110,8 @@ function showWordToGuess() {
   const wordObj = wordsToGuess[currentWordIndex];
   wordsList.innerHTML = `<li style="font-size:1.3rem; text-align:center;">${wordObj.word}</li>`;
   renderPlayerButtons(wordObj);
+
+  assignmentH2.textContent = `Décris ${wordObj.assignment.targetName} avec le thème: ${wordObj.assignment.theme}`
 }
 
 function renderPlayerButtons(wordObj) {
@@ -172,3 +176,18 @@ function checkGuess(player, wordObj) {
     ], { duration: 300 });
   }
 }
+
+nextRoundBtn.onclick = () => {
+    nextRoundBtn.style.display = "none";
+    feedback.innerHTML = "";
+    currentWordIndex++;
+
+    if(currentWordIndex < wordsToGuess.length) {
+        showWordToGuess();
+    }else{
+        feedback.innerHTML = "🎊 Tous les mots ont été devinés !";
+    }
+}
+
+playersDiv.innerHTML = "<h3>Joueurs:</h3>" + 
+    players.map(p => `<div>${p.name} — ${p.score} pts</div>`).join("");
