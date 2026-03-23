@@ -36,7 +36,7 @@ body {
   align-items: stretch;
 }
 
-/* Layout principal */
+/*Layout principal*/
 
 #app {
   width: 100%;
@@ -46,14 +46,13 @@ body {
 }
 
 body > div {
-  /* pour tes div #lobby, #writing, #guessing */
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
   padding: 18px 16px 28px;
 }
 
-/* Cartes / blocs */
+/*Cartes/blocs*/
 
 #lobby,
 #writing,
@@ -80,7 +79,7 @@ body > div {
   z-index: -1;
 }
 
-/* Titres */
+/*Titre*/
 
 h1,
 h2,
@@ -108,7 +107,6 @@ h3 {
   color: var(--muted);
 }
 
-/* Inputs */
 
 input {
   width: 100%;
@@ -135,7 +133,7 @@ input:focus {
   transform: translateY(-1px);
 }
 
-/* Boutons */
+/*Boutons*/
 
 button {
   border: none;
@@ -155,7 +153,6 @@ button:disabled {
   transform: none;
 }
 
-/* Boutons principaux */
 
 #start,
 #sendWord,
@@ -194,7 +191,7 @@ button:active:not(:disabled) {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-/* Zone joueurs */
+/*joueurs*/
 
 #players {
   margin-top: 10px;
@@ -221,7 +218,7 @@ button:active:not(:disabled) {
   margin: 3px 4px 3px 0;
 }
 
-/* Phase "writing" */
+/*Phase Write*/
 
 #writing #assignment {
   margin-bottom: 14px;
@@ -233,8 +230,7 @@ button:active:not(:disabled) {
   font-size: 0.98rem;
 }
 
-/* Phase "guessing" */
-
+/*Phase Guess*/
 #guessing h2 {
   margin-bottom: 10px;
 }
@@ -259,14 +255,13 @@ button:active:not(:disabled) {
   justify-content: space-between;
 }
 
-/* Petit badge "mot" */
+/*Mot*/
 
 #wordsList li::before {
   content: "🎯";
   margin-right: 8px;
 }
 
-/* Responsive */
 
 @media (min-width: 600px) {
   body > div {

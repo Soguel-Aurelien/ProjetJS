@@ -1,3 +1,5 @@
+import { nextTick } from "process";
+
 const socket = io();
 
 let gameCode = null;
@@ -53,7 +55,8 @@ joinBtn.onclick = () => {
 };
 
 startBtn.onclick = () => {
-  socket.emit("startGame", { gameCode });
+  const rounds = parseInt(document.getElementById("rounds").value)
+  socket.emit("startGame", { gameCode, rounds });
 };
 
 socket.on("playersUpdate", (players) => {
@@ -145,7 +148,6 @@ function checkGuess(player, wordObj) {
     feedback.innerHTML = "🎉 Bonne réponse !";
     feedback.style.color = "#4ef0ff";
 
-    // Animation de victoire
     feedback.animate([
       { transform: "scale(1)" },
       { transform: "scale(1.3)" },
@@ -167,7 +169,6 @@ function checkGuess(player, wordObj) {
     feedback.innerHTML = "❌ Mauvais joueur, réessaie !";
     feedback.style.color = "#ff6b6b";
 
-    // Animation d’erreur
     feedback.animate([
       { transform: "translateX(0)" },
       { transform: "translateX(-10px)" },
@@ -190,4 +191,13 @@ nextRoundBtn.onclick = () => {
 }
 
 playersDiv.innerHTML = "<h3>Joueurs:</h3>" + 
-    players.map(p => `<div>${p.name} — ${p.score} pts</div>`).join("");
+players.map(p => `<div>${p.name} — ${p.score} pts</div>`).join("");
+
+if (currentWordIndex === wordsToGuess.length -1) {
+  nextRoundBtn.style.display = "block";
+}
+
+nextRoundBtn.onclick = () => {
+  nextRoundBtn.style.display = "none";
+  socket.emit("nextRound", {gameCode});
+};
