@@ -31,10 +31,10 @@ const roundsInput = document.getElementById("rounds");
 const finalScoresDiv = document.getElementById("finalScores");
 
 function showPhase(phase) {
-  lobbyDiv.style.display = phase === "lobby" ? "block" : "none";
-  writingDiv.style.display = phase === "writing" ? "block" : "none";
-  guessingDiv.style.display = phase === "guessing" ? "block" : "none";
-  endDiv.style.display = phase === "end" ? "block" : "none";
+  if (lobbyDiv) lobbyDiv.style.display = phase === "lobby" ? "block" : "none";
+  if (writingDiv) writingDiv.style.display = phase === "writing" ? "block" : "none";
+  if (guessingDiv) guessingDiv.style.display = phase === "guessing" ? "block" : "none";
+  if (endDiv) endDiv.style.display = phase === "end" ? "block" : "none";
 }
 
 // CREER
