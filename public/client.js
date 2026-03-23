@@ -1,4 +1,3 @@
-// Assure-toi d'avoir <script src="/socket.io/socket.io.js"></script> dans ton HTML
 const socket = io();
 
 let gameCode = null;
@@ -42,15 +41,10 @@ function showPhase(phase) {
 createBtn.onclick = () => {
   const name = nameInput.value.trim();
   const code = codeInput.value.trim();
-  if (!name || !code) {
-    alert("Entre un nom et un code de partie.");
-    return;
-  }
+  if (!name || !code) return alert("Nom + code requis");
 
   socket.emit("createGame", { name, gameCode: code }, (res) => {
-    if (!res) return alert("Erreur inconnue.");
     if (res.error) return alert(res.error);
-
     gameCode = code;
     playerId = res.playerId;
     startBtn.style.display = "block";
@@ -62,15 +56,10 @@ createBtn.onclick = () => {
 joinBtn.onclick = () => {
   const name = nameInput.value.trim();
   const code = codeInput.value.trim();
-  if (!name || !code) {
-    alert("Entre un nom et un code de partie.");
-    return;
-  }
+  if (!name || !code) return alert("Nom + code requis");
 
   socket.emit("joinGame", { name, gameCode: code }, (res) => {
-    if (!res) return alert("Erreur inconnue.");
     if (res.error) return alert(res.error);
-
     gameCode = code;
     playerId = res.playerId;
     startBtn.style.display = "none";
@@ -80,8 +69,10 @@ joinBtn.onclick = () => {
 
 // COMMENCER
 startBtn.onclick = () => {
-  const rounds = parseInt(roundsInput.value, 10) || 1;
-  socket.emit("startGame", { gameCode, rounds });
+  socket.emit("startGame", {
+    gameCode,
+    rounds: parseInt(roundsInput.value) || 1
+  });
 };
 
 // MISE A JOUR JOUEURS
@@ -89,30 +80,13 @@ socket.on("playersUpdate", (players) => {
   playersList = players;
   playersDiv.innerHTML =
     "<h3>Joueurs :</h3>" +
-    players
-      .map((p) => `<div>${p.name} — ${p.score ?? 0} pts</div>`)
-      .join("");
-});
-
-// CHANGEMENT DE PHASE
-socket.on("phaseChange", (phase) => {
-  showPhase(phase);
-  if (phase === "writing") {
-    wordInput.value = "";
-    sendWordBtn.disabled = false;
-    feedback.innerHTML = "";
-    wordsList.innerHTML = "";
-    guessArea.innerHTML = "";
-    nextRoundBtn.style.display = "none";
-  }
-  if (phase === "guessing") {
-    feedback.innerHTML = "";
-  }
+    players.map(p => `<div>${p.name} — ${p.score} pts</div>`).join("");
 });
 
 // ASSIGNMENT
 socket.on("assignment", ({ targetName, theme, round, totalRounds }) => {
-  assignmentH2.textContent = `Round ${round}/${totalRounds} — Décris ${targetName} en un mot (thème : ${theme})`;
+  assignmentH2.textContent =
+    `Round ${round}/${totalRounds} — Décris ${targetName} (thème : ${theme})`;
 });
 
 // ENVOI DU MOT
@@ -121,16 +95,14 @@ sendWordBtn.onclick = () => {
   if (!word) return;
 
   socket.emit("submitWord", { gameCode, word }, (res) => {
-    if (!res?.ok) {
-      if (res?.error) alert(res.error);
-      return;
+    if (res.ok) {
+      wordInput.value = "";
+      sendWordBtn.disabled = true;
     }
-    wordInput.value = "";
-    sendWordBtn.disabled = true;
   });
 };
 
-// RECEPTION DES MOTS POUR DEVINER
+// RECEPTION DES MOTS
 socket.on("allWords", ({ words, round, totalRounds }) => {
   wordsToGuess = words;
   currentWordIndex = 0;
@@ -140,12 +112,18 @@ socket.on("allWords", ({ words, round, totalRounds }) => {
 
 function showWordToGuess(round, totalRounds) {
   const wordObj = wordsToGuess[currentWordIndex];
-  if (!wordObj) return;
 
-  wordsList.innerHTML = `<li style="font-size:1.3rem; text-align:center;">${wordObj.word}</li>`;
-  assignmentH2.textContent = `Round ${round}/${totalRounds} — Devine qui a écrit ce mot`;
+  wordsList.innerHTML = `
+    <li style="font-size:1.3rem; text-align:center;">
+      ${wordObj.word}
+    </li>
+  `;
+
+  assignmentH2.textContent =
+    `Round ${round}/${totalRounds} — Ce mot décrit ${wordObj.assignment.targetName} (thème : ${wordObj.assignment.theme})`;
+
   renderPlayerButtons(wordObj);
-  feedback.innerHTML = "";
+
   nextRoundBtn.style.display =
     currentWordIndex === wordsToGuess.length - 1 ? "block" : "none";
 }
@@ -153,26 +131,10 @@ function showWordToGuess(round, totalRounds) {
 function renderPlayerButtons(wordObj) {
   guessArea.innerHTML = "";
 
-  playersList.forEach((player) => {
+  playersList.forEach(player => {
     const btn = document.createElement("button");
     btn.textContent = player.name;
-    btn.style.margin = "6px 0";
-    btn.style.width = "100%";
-    btn.style.padding = "12px";
-    btn.style.borderRadius = "12px";
-    btn.style.background = "rgba(255,255,255,0.1)";
-    btn.style.color = "white";
-    btn.style.border = "1px solid rgba(255,255,255,0.2)";
-    btn.style.fontSize = "1rem";
-    btn.style.cursor = "pointer";
-    btn.style.transition = "0.2s";
-
-    btn.onmouseenter = () => {
-      btn.style.background = "rgba(255,255,255,0.2)";
-    };
-    btn.onmouseleave = () => {
-      btn.style.background = "rgba(255,255,255,0.1)";
-    };
+    btn.className = "guess-btn";
 
     btn.onclick = () => checkGuess(player, wordObj);
 
@@ -182,70 +144,39 @@ function renderPlayerButtons(wordObj) {
 
 function checkGuess(player, wordObj) {
   if (player.id === wordObj.authorId) {
-    feedback.innerHTML = "🎉 Bonne réponse !";
+    feedback.textContent = "🎉 Bonne réponse !";
     feedback.style.color = "#4ef0ff";
 
     socket.emit("addPoint", { gameCode, playerId: player.id });
 
-    feedback.animate(
-      [
-        { transform: "scale(1)" },
-        { transform: "scale(1.3)" },
-        { transform: "scale(1)" },
-      ],
-      { duration: 500 }
-    );
-
     setTimeout(() => {
-      feedback.innerHTML = "";
+      feedback.textContent = "";
       currentWordIndex++;
 
       if (currentWordIndex < wordsToGuess.length) {
-        showWordToGuess(
-          // on garde les infos de round/totalRounds du dernier paquet
-          0,
-          0
-        );
+        showWordToGuess(0, 0);
       } else {
-        feedback.innerHTML = "🎊 Tous les mots ont été devinés !";
-        nextRoundBtn.style.display = "block";
+        feedback.textContent = "🎊 Tous les mots ont été devinés !";
       }
     }, 800);
-  } else {
-    feedback.innerHTML = "❌ Mauvais joueur, réessaie !";
-    feedback.style.color = "#ff6b6b";
 
-    feedback.animate(
-      [
-        { transform: "translateX(0)" },
-        { transform: "translateX(-10px)" },
-        { transform: "translateX(10px)" },
-        { transform: "translateX(0)" },
-      ],
-      { duration: 300 }
-    );
+  } else {
+    feedback.textContent = "❌ Mauvais joueur !";
+    feedback.style.color = "#ff6b6b";
   }
 }
 
-// PROCHAIN ROUND
 nextRoundBtn.onclick = () => {
-  nextRoundBtn.style.display = "none";
-  feedback.innerHTML = "";
   socket.emit("nextRound", { gameCode });
 };
 
-// FIN DE PARTIE
+// FIN
 socket.on("gameOver", (players) => {
   showPhase("end");
   finalScoresDiv.innerHTML =
     "<h3>Scores finaux :</h3>" +
     players
       .sort((a, b) => b.score - a.score)
-      .map((p) => `<div>${p.name} — ${p.score} pts</div>`)
+      .map(p => `<div>${p.name} — ${p.score} pts</div>`)
       .join("");
-});
-
-// ERREURS SERVEUR
-socket.on("errorMessage", (msg) => {
-  alert(msg);
 });
