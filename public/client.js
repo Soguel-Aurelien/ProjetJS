@@ -139,14 +139,17 @@ function showWordToGuess() {
   const wordObj = wordsToGuess[currentWordIndex];
   if (!wordObj) return;
 
+  //MOT
   wordsList.innerHTML = `
     <li style="font-size:1.3rem; text-align:center;">
       ${wordObj.word}
     </li>
   `;
 
-  assignmentH2.textContent =
-    `Round ${currentRound}/${currentTotalRounds} — Ce mot décrit ${wordObj.assignment.targetName} (thème : ${wordObj.assignment.theme})`;
+  assignmentH2.textContent = 
+  `Round ${currentRound}/${currentTotalRounds} — 
+  Ce mot décrit ${wordObj.assignment.targetName} 
+  (thème : ${wordObj.assignment.theme})`;
 
   renderPlayerButtons(wordObj);
 
