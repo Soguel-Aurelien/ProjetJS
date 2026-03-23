@@ -5,6 +5,8 @@ let playerId = null;
 let playersList = [];
 let wordsToGuess = [];
 let currentWordIndex = 0;
+let currentRound = 1;
+let currentTotalRounds = 1;
 
 // ELEMENTS
 const nameInput = document.getElementById("name");
@@ -44,7 +46,9 @@ createBtn.onclick = () => {
   if (!name || !code) return alert("Nom + code requis");
 
   socket.emit("createGame", { name, gameCode: code }, (res) => {
+    if (!res) return alert("Erreur inconnue");
     if (res.error) return alert(res.error);
+
     gameCode = code;
     playerId = res.playerId;
     startBtn.style.display = "block";
@@ -59,7 +63,9 @@ joinBtn.onclick = () => {
   if (!name || !code) return alert("Nom + code requis");
 
   socket.emit("joinGame", { name, gameCode: code }, (res) => {
+    if (!res) return alert("Erreur inconnue");
     if (res.error) return alert(res.error);
+
     gameCode = code;
     playerId = res.playerId;
     startBtn.style.display = "none";
@@ -69,10 +75,8 @@ joinBtn.onclick = () => {
 
 // COMMENCER
 startBtn.onclick = () => {
-  socket.emit("startGame", {
-    gameCode,
-    rounds: parseInt(roundsInput.value) || 1
-  });
+  const rounds = parseInt(roundsInput.value, 10) || 1;
+  socket.emit("startGame", { gameCode, rounds });
 };
 
 // MISE A JOUR JOUEURS
@@ -80,11 +84,26 @@ socket.on("playersUpdate", (players) => {
   playersList = players;
   playersDiv.innerHTML =
     "<h3>Joueurs :</h3>" +
-    players.map(p => `<div>${p.name} — ${p.score} pts</div>`).join("");
+    players.map(p => `<div>${p.name} — ${p.score ?? 0} pts</div>`).join("");
+});
+
+// CHANGEMENT DE PHASE
+socket.on("phaseChange", (phase) => {
+  showPhase(phase);
+  if (phase === "writing") {
+    wordInput.value = "";
+    sendWordBtn.disabled = false;
+    feedback.textContent = "";
+    wordsList.innerHTML = "";
+    guessArea.innerHTML = "";
+    nextRoundBtn.style.display = "none";
+  }
 });
 
 // ASSIGNMENT
 socket.on("assignment", ({ targetName, theme, round, totalRounds }) => {
+  currentRound = round;
+  currentTotalRounds = totalRounds;
   assignmentH2.textContent =
     `Round ${round}/${totalRounds} — Décris ${targetName} (thème : ${theme})`;
 });
@@ -95,23 +114,30 @@ sendWordBtn.onclick = () => {
   if (!word) return;
 
   socket.emit("submitWord", { gameCode, word }, (res) => {
-    if (res.ok) {
-      wordInput.value = "";
-      sendWordBtn.disabled = true;
-    }
+    if (!res) return;
+    if (!res.ok && res.error) return alert(res.error);
+
+    wordInput.value = "";
+    sendWordBtn.disabled = true;
   });
 };
 
 // RECEPTION DES MOTS
 socket.on("allWords", ({ words, round, totalRounds }) => {
-  wordsToGuess = words;
+  wordsToGuess = words || [];
   currentWordIndex = 0;
+  currentRound = round;
+  currentTotalRounds = totalRounds;
+
+  if (!wordsToGuess.length) return;
+
   showPhase("guessing");
-  showWordToGuess(round, totalRounds);
+  showWordToGuess();
 });
 
-function showWordToGuess(round, totalRounds) {
+function showWordToGuess() {
   const wordObj = wordsToGuess[currentWordIndex];
+  if (!wordObj) return;
 
   wordsList.innerHTML = `
     <li style="font-size:1.3rem; text-align:center;">
@@ -120,7 +146,7 @@ function showWordToGuess(round, totalRounds) {
   `;
 
   assignmentH2.textContent =
-    `Round ${round}/${totalRounds} — Ce mot décrit ${wordObj.assignment.targetName} (thème : ${wordObj.assignment.theme})`;
+    `Round ${currentRound}/${currentTotalRounds} — Ce mot décrit ${wordObj.assignment.targetName} (thème : ${wordObj.assignment.theme})`;
 
   renderPlayerButtons(wordObj);
 
@@ -135,6 +161,8 @@ function renderPlayerButtons(wordObj) {
     const btn = document.createElement("button");
     btn.textContent = player.name;
     btn.className = "guess-btn";
+    btn.style.margin = "6px 0";
+    btn.style.width = "100%";
 
     btn.onclick = () => checkGuess(player, wordObj);
 
@@ -154,9 +182,10 @@ function checkGuess(player, wordObj) {
       currentWordIndex++;
 
       if (currentWordIndex < wordsToGuess.length) {
-        showWordToGuess(0, 0);
+        showWordToGuess();
       } else {
         feedback.textContent = "🎊 Tous les mots ont été devinés !";
+        nextRoundBtn.style.display = "block";
       }
     }, 800);
 
@@ -167,6 +196,8 @@ function checkGuess(player, wordObj) {
 }
 
 nextRoundBtn.onclick = () => {
+  feedback.textContent = "";
+  nextRoundBtn.style.display = "none";
   socket.emit("nextRound", { gameCode });
 };
 
@@ -179,4 +210,8 @@ socket.on("gameOver", (players) => {
       .sort((a, b) => b.score - a.score)
       .map(p => `<div>${p.name} — ${p.score} pts</div>`)
       .join("");
+});
+
+socket.on("errorMessage", (msg) => {
+  alert(msg);
 });
