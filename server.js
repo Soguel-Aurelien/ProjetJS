@@ -26,9 +26,9 @@ function createGame(code) {
   });
 }
 
-function startRound(gameCode){
+function startRound(gameCode) {
   const game = games.get(gameCode);
-  if(!game) return;
+  if (!game) return;
 
   const themes = [
     "Un Animal", "Un Objet", "Une Qualité", "Son Super-pouvoir",
@@ -58,17 +58,17 @@ function startRound(gameCode){
   ];
 
   const players = game.players;
-  const shuffled = [...players].sort(() => Math.random()-0.5);
+  const shuffled = [...players].sort(() => Math.random() - 0.5);
 
   game.state = "writing";
   game.words = [];
   game.assignments = {};
 
   players.forEach((p, i) => {
-    const target = shuffled[(i+1) % players.length];
-    const theme = themes[Math.floor(Math.random()*themes.length)];
+    const target = shuffled[(i + 1) % players.length];
+    const theme = themes[Math.floor(Math.random() * themes.length)];
 
-    game.assignments[p.id] = {targetName: target.name, theme};
+    game.assignments[p.id] = { targetName: target.name, theme };
 
     io.to(p.id).emit("assignment", {
       targetName: target.name,
@@ -77,9 +77,10 @@ function startRound(gameCode){
       totalRounds: game.totalRounds
     });
   });
-  
+
   io.to(gameCode).emit("phaseChange", "writing");
 }
+
 
 io.on("connection", (socket) => {
 
@@ -110,35 +111,16 @@ io.on("connection", (socket) => {
   });
 
   // COMMENCE ET MOTS
-  socket.on("startGame", ({ gameCode }) => {
-    const game = games.get(gameCode);
-    if (!game) return;
+socket.on("startGame", ({ gameCode, rounds }) => {
+  const game = games.get(gameCode);
+  if (!game) return;
 
-    game.totalRounds = rounds;
-    game.currentRound = 1;
+  game.totalRounds = rounds;
+  game.currentRound = 1;
 
-    const players = game.players;
-    const shuffled = [...players].sort(() => Math.random() - 0.5);
+  startRound(gameCode);
+});
 
-    game.state = "writing";
-    game.words = [];
-    game.assignments = {};
-
-    players.forEach((p, i) => {
-      const target = shuffled[(i + 1) % players.length];
-      const theme = themes[Math.floor(Math.random() * themes.length)];
-
-      game.assignments[p.id] = { targetName: target.name, theme };
-
-      io.to(p.id).emit("assignment", {
-        targetName: target.name,
-        theme
-      });
-    });
-
-    io.to(gameCode).emit("phaseChange", "writing");
-    startRound(gameCode);
-  });
 
   // DONNER LE MOT
   socket.on("submitWord", ({ gameCode, word }, cb) => {
